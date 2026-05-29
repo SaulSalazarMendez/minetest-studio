@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minetest Studio</title>
+    
+    <!-- Vue.js 2 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuex@3.6.2/dist/vuex.js"></script>
+    
+    <!-- Monaco Editor -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/editor/editor.main.css">
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+    
+    <!-- xterm.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    
+    <!-- Neutralino.js -->
+    <script src="js/neutralino.js"></script>
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Barra de Actividades (izquierda) -->
+        <div class="activity-bar">
+            <div class="activity-icons-top">
+                <button class="activity-icon" :class="{ active: activePanel === 'explorer' }" @click="activePanel = 'explorer'" title="Explorador">
+                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+                </button>
+                <button class="activity-icon" :class="{ active: activePanel === 'search' }" @click="activePanel = 'search'" title="Buscar">
+                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                </button>
+                <button class="activity-icon" :class="{ active: activePanel === 'mobs' }" @click="activePanel = 'mobs'" title="Mobs">
+                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                </button>
+            </div>
+            <div class="activity-icons-bottom">
+                <button class="activity-icon" @click="openSettings" title="Configuración">
+                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra Lateral -->
+        <div class="sidebar" v-show="activePanel">
+            <!-- Panel Explorador -->
+            <div v-if="activePanel === 'explorer'" class="sidebar-panel">
+                <div class="sidebar-title">EXPLORADOR</div>
+                <div class="explorer-section">
+                    <div class="section-header" @click="toggleExplorerSection('workspace')">
+                        <span class="arrow" :class="{ expanded: explorerSections.workspace }">▶</span>
+                        <span>WORKSPACE</span>
+                    </div>
+                    <div v-show="explorerSections.workspace" class="file-tree">
+                        <div v-if="projectPath" class="project-path">{{ getProjectName() }}</div>
+                        <file-tree-item 
+                            v-for="item in fileTree" 
+                            :key="item.path" 
+                            :item="item" 
+                            :depth="0"
+                            @open-file="openFile"
+                            @preview-image="previewImage"
+                        ></file-tree-item>
+                        <div v-if="!projectPath" class="no-workspace">
+                            <button @click="selectWorkspace" class="btn-select-workspace">Seleccionar Workspace</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Búsqueda -->
+            <div v-if="activePanel === 'search'" class="sidebar-panel">
+                <div class="sidebar-title">BUSCAR</div>
+                <div class="search-container">
+                    <input type="text" v-model="searchQuery" @keyup.enter="performSearch" placeholder="Buscar en archivos..." class="search-input">
+                    <button @click="performSearch" class="btn-search">Buscar</button>
+                </div>
+                <div class="search-results">
+                    <div v-for="(result, index) in searchResults" :key="index" class="search-result" @click="openFile(result.file, result.line)">
+                        <div class="result-file">{{ result.file }}</div>
+                        <div class="result-line">{{ result.line }}: {{ result.text }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Mobs -->
+            <div v-if="activePanel === 'mobs'" class="sidebar-panel">
+                <div class="sidebar-title">MOBS</div>
+                <button @click="createNewMob" class="btn-create-mob">+ Crear Nuevo Mob</button>
+                <div class="mobs-list">
+                    <div v-for="mob in mobsList" :key="mob.name" class="mob-item" @click="selectMob(mob)">
+                        <span class="mob-name">{{ mob.name }}</span>
+                        <span class="mob-path">{{ mob.path }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área Principal -->
+        <div class="main-area">
+            <!-- Pestañas -->
+            <div class="tabs-bar" v-if="openFiles.length > 0">
+                <div 
+                    v-for="file in openFiles" 
+                    :key="file.path" 
+                    class="tab"
+                    :class="{ active: currentFile && currentFile.path === file.path }"
+                    @click="switchTab(file)"
+                >
+                    <span class="tab-icon">{{ getFileIcon(file.name) }}</span>
+                    <span class="tab-name">{{ file.name }}</span>
+                    <span v-if="file.modified" class="tab-modified">*</span>
+                    <button class="tab-close" @click.stop="closeTab(file)">×</button>
+                </div>
+            </div>
+
+            <!-- Editor / Vista Previa -->
+            <div class="editor-container">
+                <div v-if="currentFile && isImageFile(currentFile.name)" class="image-preview">
+                    <img :src="getImagePreviewUrl(currentFile.path)" alt="Vista previa" class="preview-image">
+                </div>
+                <div v-else id="monaco-editor" class="monaco-editor"></div>
+                <div v-if="!currentFile && openFiles.length === 0" class="welcome-screen">
+                    <h1>Minetest Studio</h1>
+                    <p>Editor de mods para Luanti/Minetest</p>
+                    <button @click="selectWorkspace" class="btn-welcome">Abrir Workspace</button>
+                    <button @click="createNewMob" class="btn-welcome">Crear Nuevo Mob</button>
+                </div>
+            </div>
+
+            <!-- Terminal -->
+            <div class="terminal-container" :class="{ collapsed: terminalCollapsed }">
+                <div class="terminal-header" @click="terminalCollapsed = !terminalCollapsed">
+                    <span>TERMINAL</span>
+                    <button class="terminal-toggle">{{ terminalCollapsed ? '▼' : '▲' }}</button>
+                </div>
+                <div v-show="!terminalCollapsed" class="terminal-body">
+                    <div id="xterm-terminal" class="xterm-terminal"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Estado -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span v-if="currentFile">{{ currentFile.language || 'Plain Text' }}</span>
+                <span v-else>Sin archivo</span>
+            </div>
+            <div class="status-right">
+                <span v-if="projectPath">Proyecto: {{ getProjectName() }}</span>
+                <span v-else>Sin proyecto</span>
+                <span class="status-item" @click="toggleTerminal">{{ terminalCollapsed ? 'Mostrar Terminal' : 'Ocultar Terminal' }}</span>
+            </div>
+        </div>
+
+        <!-- Notificaciones -->
+        <transition-group name="notification-fade" tag="div" class="notifications-container">
+            <div v-for="notif in notifications" :key="notif.id" :class="['notification', notif.type]">
+                <span>{{ notif.message }}</span>
+                <button @click="dismissNotification(notif.id)" class="notif-close">×</button>
+            </div>
+        </transition-group>
+
+        <!-- Diálogo de Configuración -->
+        <div v-if="showSettingsDialog" class="dialog-overlay" @click.self="showSettingsDialog = false">
+            <div class="dialog">
+                <h2>Configuración</h2>
+                <div class="form-group">
+                    <label>Ruta de Luanti/Minetest:</label>
+                    <input type="text" v-model="config.minetestPath" readonly class="input-readonly">
+                    <button @click="selectMinetestPath" class="btn-browse">Examinar</button>
+                </div>
+                <div class="dialog-actions">
+                    <button @click="saveConfig" class="btn-primary">Guardar</button>
+                    <button @click="showSettingsDialog = false" class="btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diálogo Crear Mob -->
+        <div v-if="showCreateMobDialog" class="dialog-overlay" @click.self="showCreateMobDialog = false">
+            <div class="dialog">
+                <h2>Crear Nuevo Mob</h2>
+                <div class="form-group">
+                    <label>Nombre del Mob:</label>
+                    <input type="text" v-model="newMobName" placeholder="ej: dragon_fuego" class="input-text">
+                </div>
+                <div class="form-group">
+                    <label>Descripción:</label>
+                    <input type="text" v-model="newMobDescription" placeholder="Descripción del mob" class="input-text">
+                </div>
+                <div class="dialog-actions">
+                    <button @click="confirmCreateMob" class="btn-primary">Crear</button>
+                    <button @click="showCreateMobDialog = false" class="btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts de la aplicación -->
+    <script src="js/stores/store.js"></script>
+    <script src="js/services/config.service.js"></script>
+    <script src="js/services/file.service.js"></script>
+    <script src="js/services/mob.service.js"></script>
+    <script src="js/core/monaco-config.js"></script>
+    <script src="js/core/terminal.js"></script>
+    <script src="js/components/FileTreeItem.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

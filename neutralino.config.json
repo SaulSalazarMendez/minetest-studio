@@ -1,0 +1,41 @@
+{
+  "applicationId": "com.minetest.studio",
+  "version": "1.0.0",
+  "defaultMode": "window",
+  "documentTitle": "Minetest Studio",
+  "modes": {
+    "window": {
+      "title": "Minetest Studio",
+      "width": 1280,
+      "height": 720,
+      "minWidth": 800,
+      "minHeight": 600,
+      "fullScreen": false,
+      "alwaysOnTop": false,
+      "iconic": false,
+      "hidden": false,
+      "borderless": false,
+      "maximize": false,
+      "center": true
+    }
+  },
+  "url": "/resources/index.html",
+  "enableServer": true,
+  "enableNativeAPI": true,
+  "tokenSecurity": "one-time",
+  "logging": {
+    "enabled": true,
+    "writeToLogFile": true
+  },
+  "nativeAllowList": [
+    "app.*",
+    "os.*",
+    "fs.*",
+    "storage.*",
+    "debug.*",
+    "window.*"
+  ],
+  "extensions": {
+    "builtIn": ["filesystem", "os", "storage", "app", "debug", "window"]
+  }
+}
